@@ -6,6 +6,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const { log } = require("node:console");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -28,53 +29,37 @@ if (!uri) {
   process.exit(1);
 }
 
-// Create MongoDB Client
+
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  },
+  }
 });
 
-async function run() {
-  try {
-    // Connect MongoDB
-    await client.connect();
-
-    // Test Connection
-    await client.db("admin").command({ ping: 1 });
-
-    console.log("✅ Successfully connected to MongoDB!");
-
-   
-
-    // Example Route
-    app.get("/users", async (req, res) => {
-      res.send("Users API is working.");
-    });
-
-
-    // add mongo db connection close on server shutdown
-    process.on("SIGINT", async () => {
-      console.log("🔒 Closing MongoDB connection...");
-      await client.close();
-      console.log("✅ MongoDB connection closed.");
-      process.exit(0);
-    });
-
-
-
-  } catch (error) {
-    console.error("❌ MongoDB Connection Error:");
-    console.error(error);
-  }
-}
-
-// Run MongoDB Connection
-run().catch(console.dir);
 
 // Start Server
 app.listen(port, () => {
   console.log(`🚀 Server is running on port ${port}`);
 });
+
+
+
+async function run() {
+  try {
+    
+    await client.connect();
+    await client.db("admin").command({ ping: 1 });
+    
+  } finally {
+    
+  }
+}
+run().catch(console.dir);
+
+
+
+
+
