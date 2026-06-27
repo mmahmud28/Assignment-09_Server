@@ -47,17 +47,23 @@ async function run() {
 
     console.log("✅ Successfully connected to MongoDB!");
 
-    // ==========================
-    // Your Collections Here
-    // ==========================
-
-    // const database = client.db("yourDatabaseName");
-    // const usersCollection = database.collection("users");
+   
 
     // Example Route
     app.get("/users", async (req, res) => {
       res.send("Users API is working.");
     });
+
+
+    // add mongo db connection close on server shutdown
+    process.on("SIGINT", async () => {
+      console.log("🔒 Closing MongoDB connection...");
+      await client.close();
+      console.log("✅ MongoDB connection closed.");
+      process.exit(0);
+    });
+
+
 
   } catch (error) {
     console.error("❌ MongoDB Connection Error:");
