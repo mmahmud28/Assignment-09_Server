@@ -56,18 +56,25 @@ async function run() {
     const trutorsCollection = database.collection("trutors");
 
 
-    app.get("/trutors", async (req, res) => {
+    app.get("/tutors", async (req, res) => {
       const cursor = trutorsCollection.find({});
       const trutors = await cursor.toArray();
       res.send(trutors);
     });
 
     
-    app.get("/trutors/:id", async (req, res) => {
+    app.get("/tutors/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const trutor = await trutorsCollection.findOne(query);
       res.send(trutor);
+    });
+
+
+    app.post("/tutors", async (req, res) => {
+      const newTutor = req.body;
+      const result = await trutorsCollection.insertOne(newTutor);
+      res.send(result);
     });
 
 
