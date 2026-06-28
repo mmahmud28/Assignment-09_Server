@@ -62,29 +62,11 @@ async function run() {
       res.send(trutors);
     });
 
-    query.tutorName = {
-      $regex: searchText,
-      $options: "i",
-    };
-
-    query.sessionStartDate = {
-      $gte: startDate,
-      $lte: endDate,
-    };
-
-
     app.get("/tutors/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const trutor = await trutorsCollection.findOne(query);
       res.send(trutor);
-    });
-
-
-    app.post("/tutors", async (req, res) => {
-      const newTutor = req.body;
-      const result = await trutorsCollection.insertOne(newTutor);
-      res.send(result);
     });
 
 
