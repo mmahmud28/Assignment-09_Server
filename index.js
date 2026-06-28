@@ -49,7 +49,7 @@ app.listen(port, () => {
 
 async function run() {
   try {
-    
+
     await client.connect();
 
     const database = client.db("my-tutor");
@@ -62,7 +62,17 @@ async function run() {
       res.send(trutors);
     });
 
-    
+    query.tutorName = {
+      $regex: searchText,
+      $options: "i",
+    };
+
+    query.sessionStartDate = {
+      $gte: startDate,
+      $lte: endDate,
+    };
+
+
     app.get("/tutors/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -78,9 +88,9 @@ async function run() {
     });
 
 
-    
+
   } finally {
-    
+
   }
 }
 run().catch(console.dir);
