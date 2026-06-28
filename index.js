@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { log } = require("node:console");
 
 const app = express();
@@ -51,7 +51,26 @@ async function run() {
   try {
     
     await client.connect();
-    await client.db("admin").command({ ping: 1 });
+
+    const database = client.db("my-tutor");
+    const trutorsCollection = database.collection("trutors");
+
+
+    app.get("/trutors", async (req, res) => {
+      const cursor = trutorsCollection.find({});
+      const trutors = await cursor.toArray();
+      res.send(trutors);
+    });
+
+    
+    app.get("/trutors/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const trutor = await trutorsCollection.findOne(query);
+      res.send(trutor);
+    });
+
+
     
   } finally {
     
