@@ -53,21 +53,49 @@ async function run() {
     await client.connect();
 
     const database = client.db("my-tutor");
-    const trutorsCollection = database.collection("trutors");
+    const tutorsCollection = database.collection("tutors");
+    const bookingTutorsCollection = database.collection("booking_Tutor");
 
 
     app.get("/tutors", async (req, res) => {
-      const cursor = trutorsCollection.find({});
-      const trutors = await cursor.toArray();
-      res.send(trutors);
+      const cursor = tutorsCollection.find({});
+      const tutors = await cursor.toArray();
+      res.send(tutors);
     });
 
     app.get("/tutors/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const trutor = await trutorsCollection.findOne(query);
-      res.send(trutor);
+      const tutor = await tutorsCollection.findOne(query);
+      res.send(tutor);
     });
+
+    app.get("/allBookings", async (req, res) => {
+      const bookings = await bookingTutorsCollection.find().toArray();
+      res.send(bookings);
+    });
+
+    app.get("/myBookings", async (req, res) => {
+      const { email } = req.query;
+
+      if (!email) {
+        return res.status(400).send({
+          error: "Student email is required",
+        });
+      }
+
+      const query = {
+        studentEmail: email,
+      };
+
+      const bookings = await bookingTutorsCollection
+        .find(query)
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      res.send(bookings);
+    });
+
 
 
 
