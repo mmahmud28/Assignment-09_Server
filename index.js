@@ -110,16 +110,16 @@ async function run() {
     });
 
 
-    app.get("/users", async (req, res) => {
-      try {
-        const users = await usersCollection.find({}).toArray();
-        console.log(users);
-        res.send(users);
-      } catch (error) {
-        console.error(error);
-        res.status(500).send(error.message);
-      }
-    });
+    // app.get("/users", async (req, res) => {
+    //   try {
+    //     const users = await usersCollection.find({}).toArray();
+    //     console.log(users);
+    //     res.send(users);
+    //   } catch (error) {
+    //     console.error(error);
+    //     res.status(500).send(error.message);
+    //   }
+    // });
 
 
     app.get("/users", async (req, res) => {
