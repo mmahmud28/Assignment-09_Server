@@ -46,6 +46,15 @@ app.listen(port, () => {
 });
 
 
+const loger = (req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+}
+
+
+
+
+
 
 async function run() {
   try {
@@ -56,7 +65,7 @@ async function run() {
 
     const tutorsCollection = database.collection("tutors");
     const bookingTutorsCollection = database.collection("booking_Tutor");
-    const usersCollection = database.collection("users");
+    const usersCollection = database.collection("user");
 
 
     app.get("/tutors", async (req, res) => {
@@ -99,7 +108,9 @@ async function run() {
     });
 
 
-    app.get("/myBookings/:id", async (req, res) => {
+    app.get("/myBookings/:id",
+      loger,
+      async (req, res) => {
       const id = req.params.id;
 
       const booking = await bookingTutorsCollection.findOne({
