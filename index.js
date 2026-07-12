@@ -7,6 +7,7 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { log } = require("node:console");
+const { createRemoteJWKSet } = require("jose-cjs");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -51,7 +52,21 @@ const loger = (req, res, next) => {
   next();
 }
 
+const veryFiToken = async (req, res, next) => {
 
+  const { authorization } = req.headers;
+
+  const token = authorization?.split(" ")[1];
+
+
+  console.log(token);
+  next();
+}
+
+
+const JWKS = createRemoteJWKSet(
+      new URL('http://localhost:3000/api/auth/jwks')
+    )
 
 
 
@@ -74,7 +89,7 @@ async function run() {
       res.send(tutors);
     });
 
-    app.get("/tutors/:id", async (req, res) => {
+    app.get("/tutors/:id", loger, veryFiToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const tutor = await tutorsCollection.findOne(query);
@@ -109,28 +124,15 @@ async function run() {
 
 
     app.get("/myBookings/:id",
-      loger,
       async (req, res) => {
-      const id = req.params.id;
+        const id = req.params.id;
 
-      const booking = await bookingTutorsCollection.findOne({
-        _id: id,
+        const booking = await bookingTutorsCollection.findOne({
+          _id: id,
+        });
+
+        res.send(booking);
       });
-
-      res.send(booking);
-    });
-
-
-    // app.get("/users", async (req, res) => {
-    //   try {
-    //     const users = await usersCollection.find({}).toArray();
-    //     console.log(users);
-    //     res.send(users);
-    //   } catch (error) {
-    //     console.error(error);
-    //     res.status(500).send(error.message);
-    //   }
-    // });
 
 
     app.get("/users", async (req, res) => {
