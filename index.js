@@ -7,7 +7,7 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { log } = require("node:console");
-const { createRemoteJWKSet } = require("jose-cjs");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -58,15 +58,48 @@ const veryFiToken = async (req, res, next) => {
 
   const token = authorization?.split(" ")[1];
 
+  if (!token) {
+    return res.status(401).json({
+      error: "Unauthorized",
+    });//////
+  }
+
+
+  const JWKS = createRemoteJWKSet(
+    new URL('http://localhost:3000/api/auth/jwks')
+  )
+
+
+  try {
+    const JWKS = createRemoteJWKSet(
+      new URL('http://localhost:3000/api/auth/jwks')
+    )
+    const { payload } = await jwtVerify(token, JWKS)
+
+
+    req.user = payload;
+
+
+    console.log(req.user);
+
+    next();
+
+  } catch (error) {
+    console.error('Token validation failed:', error)
+    return res.status(401).json({
+      error: "Unauthorized",
+    });
+  }
+
+
+
 
   console.log(token);
-  next();
+
 }
 
 
-const JWKS = createRemoteJWKSet(
-      new URL('http://localhost:3000/api/auth/jwks')
-    )
+
 
 
 
@@ -123,16 +156,24 @@ async function run() {
     });
 
 
-    app.get("/myBookings/:id",
-      async (req, res) => {
+    app.get("/myBookings/:id", async (req, res) => {
+      try {
         const id = req.params.id;
 
+        console.log("ID from params:", id);
+
         const booking = await bookingTutorsCollection.findOne({
-          _id: id,
+          _id: new ObjectId(id),
         });
 
+        console.log("Booking:", booking);
+
         res.send(booking);
-      });
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: error.message });
+      }
+    });
 
 
     app.get("/users", async (req, res) => {
@@ -159,6 +200,59 @@ async function run() {
         res.status(500).send({
           message: error.message,
         });
+      }
+    });
+
+
+
+    app.post("/booking_Tutor", async (req, res) => {
+      try {
+        const booking = req.body;
+
+        const tutorId = booking.tutor._id;
+
+        // 1. Tutor খুঁজে বের করো
+        const tutor = await tutorsCollection.findOne({
+          _id: new ObjectId(tutorId),
+        });
+
+        // 2. Slot আছে কিনা চেক করো ✅
+        if (tutor.totalSlot <= 0) {
+          return res.status(400).send({
+            message: "No available slots",
+          });
+        }
+
+        // 3. আগে বুক করেছে কিনা চেক করো ✅
+        const alreadyBooked = await bookingTutorsCollection.findOne({
+          "student.email": booking.student.email,
+          "tutor._id": tutorId,
+        });
+
+        if (alreadyBooked) {
+          return res.status(400).send({
+            message: "You have already booked this tutor",
+          });
+        }
+
+        // 4. Booking Save
+        const result = await bookingTutorsCollection.insertOne(booking);
+
+        // 5. Slot কমাও
+        await tutorsCollection.updateOne(
+          { _id: new ObjectId(tutorId) },
+          {
+            $inc: {
+              totalSlot: -1,
+            },
+          }
+        );
+
+        res.send(result);
+
+      } catch (error) {
+        console.log(error);
+        res.status(500).send({ message: error.message });
       }
     });
 
