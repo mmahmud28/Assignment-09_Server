@@ -60,8 +60,9 @@ const veryFiToken = async (req, res, next) => {
 
   if (!token) {
     return res.status(401).json({
-      error: "Unauthorized",
-    });//////
+      success: false,
+      message: "Unauthorized",
+    });
   }
 
 
@@ -100,10 +101,6 @@ const veryFiToken = async (req, res, next) => {
 
 
 
-
-
-
-
 async function run() {
   try {
 
@@ -139,7 +136,7 @@ async function run() {
     });
 
     app.get("/allBookings", async (req, res) => {
-      const bookings = await tutorsCollection.find().toArray();
+      const bookings = await bookingTutorsCollection.find().toArray();
       res.send(bookings);
     });
 
@@ -148,56 +145,148 @@ async function run() {
 
       if (!email) {
         return res.status(400).send({
-          error: "Email is required",
+          error: "Student email is required",
         });
       }
 
-      try {
-        const tutors = await tutorsCollection
-          .find({
-            "createdBy.email": email,
-          })
-          .sort({
-            createdAt: -1,
-          })
-          .toArray();
+      const bookings = await bookingTutorsCollection
+        .find({
+          "student.email": email,
+        })
+        .sort({
+          "timestamps.createdAt": -1,
+        })
+        .toArray();
 
-        res.send(tutors);
-      } catch (error) {
-        console.error(error);
-        res.status(500).send({
-          error: "Internal Server Error",
-        });
-      }
+      res.send(bookings);
     });
 
 
     app.get("/myBookings/:id", async (req, res) => {
       try {
-        const { id } = req.params;
-        const { email } = req.query;
+        const id = req.params.id;
 
-        const booking = await tutorsCollection.findOne({
+        console.log("ID from params:", id);
+
+        const booking = await bookingTutorsCollection.findOne({
           _id: new ObjectId(id),
-          "createdBy.email": email,
         });
 
-        if (!booking) {
-          return res.status(404).send({
-            message: "Tutor not found",
-          });
-        }
+        console.log("Booking:", booking);
 
         res.send(booking);
       } catch (error) {
         console.error(error);
-        res.status(500).send({
-          message: error.message,
-        });
+        res.status(500).send({ message: error.message });
       }
     });
 
+    //
 
+    app.get("/myAddTutor", async (req, res) => {
+
+      const { email } = req.query;
+
+
+
+      if (!email) {
+
+        return res.status(400).send({
+
+          error: "Email is required",
+
+        });
+
+      }
+
+
+
+      try {
+
+        const tutors = await tutorsCollection
+
+          .find({
+
+            "createdBy.email": email,
+
+          })
+
+          .sort({
+
+            createdAt: -1,
+
+          })
+
+          .toArray();
+
+
+
+        res.send(tutors);
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).send({
+
+          error: "Internal Server Error",
+
+        });
+
+      }
+
+    });
+
+
+    app.get("/myAddTutor/:id", async (req, res) => {
+
+      try {
+
+        const { id } = req.params;
+
+        const { email } = req.query;
+
+
+
+        const booking = await tutorsCollection.findOne({
+
+          _id: new ObjectId(id),
+
+          "createdBy.email": email,
+
+        });
+
+
+
+        if (!booking) {
+
+          return res.status(404).send({
+
+            message: "Tutor not found",
+
+          });
+
+        }
+
+
+
+        res.send(booking);
+
+      } catch (error) {
+
+        console.error(error);
+
+        res.status(500).send({
+
+          message: error.message,
+
+        });
+
+      }
+
+    });
+
+    //
     app.get("/users", async (req, res) => {
       try {
         const { email } = req.query;
@@ -278,6 +367,39 @@ async function run() {
       }
     });
 
+    app.delete("/booking_Tutor/:id", veryFiToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const email = req.user.email;
+
+        const booking = await bookingTutorsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        if (!booking) {
+          return res.status(404).send({
+            message: "Booking not found",
+          });
+        }
+
+        // যে বুকিং করেছে সে ছাড়া কেউ ডিলিট করতে পারবে না
+        if (booking.student.email !== email) {
+          return res.status(403).send({
+            message: "Forbidden",
+          });
+        }
+
+        const result = await bookingTutorsCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({
+          message: err.message,
+        });
+      }
+    });
 
 
   } finally {
