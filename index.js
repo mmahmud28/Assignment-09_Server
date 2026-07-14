@@ -115,6 +115,15 @@ async function run() {
     const bookingTutorsCollection = database.collection("booking_Tutor");
     const usersCollection = database.collection("user");
 
+    app.post("/add-tutors", async (req, res) => {
+
+      const tutor = req.body;
+
+      const result = await tutorsCollection.insertOne(tutor);
+
+      res.send(result);
+
+    });
 
     app.get("/tutors", async (req, res) => {
       const cursor = tutorsCollection.find({});
@@ -130,7 +139,7 @@ async function run() {
     });
 
     app.get("/allBookings", async (req, res) => {
-      const bookings = await bookingTutorsCollection.find().toArray();
+      const bookings = await tutorsCollection.find().toArray();
       res.send(bookings);
     });
 
@@ -139,39 +148,52 @@ async function run() {
 
       if (!email) {
         return res.status(400).send({
-          error: "Student email is required",
+          error: "Email is required",
         });
       }
 
-      const bookings = await bookingTutorsCollection
-        .find({
-          "student.email": email,
-        })
-        .sort({
-          "timestamps.createdAt": -1,
-        })
-        .toArray();
+      try {
+        const tutors = await tutorsCollection
+          .find({
+            "createdBy.email": email,
+          })
+          .sort({
+            createdAt: -1,
+          })
+          .toArray();
 
-      res.send(bookings);
+        res.send(tutors);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({
+          error: "Internal Server Error",
+        });
+      }
     });
 
 
     app.get("/myBookings/:id", async (req, res) => {
       try {
-        const id = req.params.id;
+        const { id } = req.params;
+        const { email } = req.query;
 
-        console.log("ID from params:", id);
-
-        const booking = await bookingTutorsCollection.findOne({
+        const booking = await tutorsCollection.findOne({
           _id: new ObjectId(id),
+          "createdBy.email": email,
         });
 
-        console.log("Booking:", booking);
+        if (!booking) {
+          return res.status(404).send({
+            message: "Tutor not found",
+          });
+        }
 
         res.send(booking);
       } catch (error) {
         console.error(error);
-        res.status(500).send({ message: error.message });
+        res.status(500).send({
+          message: error.message,
+        });
       }
     });
 
