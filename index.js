@@ -66,14 +66,9 @@ const veryFiToken = async (req, res, next) => {
   }
 
 
-  const JWKS = createRemoteJWKSet(
-    new URL('http://localhost:3000/api/auth/jwks')
-  )
-
-
   try {
     const JWKS = createRemoteJWKSet(
-      new URL('http://localhost:3000/api/auth/jwks')
+      new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
     )
     const { payload } = await jwtVerify(token, JWKS)
 
@@ -104,7 +99,7 @@ const veryFiToken = async (req, res, next) => {
 async function run() {
   try {
 
-    await client.connect();
+    // await client.connect();
 
     const database = client.db("my-tutor");
 
@@ -313,7 +308,6 @@ async function run() {
         });
       }
     });
-
 
 
     app.post("/booking_Tutor", async (req, res) => {
