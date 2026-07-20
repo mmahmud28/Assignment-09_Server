@@ -123,7 +123,7 @@ async function run() {
       res.send(tutors);
     });
 
-    app.get("/tutors/:id", loger, veryFiToken, async (req, res) => {
+    app.get("/tutors/:id",async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const tutor = await tutorsCollection.findOne(query);
